@@ -175,3 +175,49 @@ p_value = stats.chi2.sf(lrt_stat, df_diff)
 
 print(f"\nLRT Statistic: {lrt_stat:.2f}")
 print(f"LRT p-valor: {p_value:.4f}")
+
+# =========================================================
+# ### 4. DIAGNÓSTICOS ADICIONALES (LINEALIDAD, COOK Y CALIBRACIÓN) ###
+# =========================================================
+
+print("\n### 4. DIAGNÓSTICOS ADICIONALES (MODELO 2, n = 408) ###")
+
+# A) Observaciones influyentes (Distancia de Cook en Statsmodels)
+influencia = modelo_final.get_influence()
+cooks_d = influencia.cooks_distance[0]
+print("\n--- A) Observaciones Influyentes (Distancia de Cook) ---")
+print(f"Distancia de Cook máxima: {np.max(cooks_d):.4f}")
+print(f"Casos con Cook's D > 1.0 (umbral crítico): {np.sum(cooks_d > 1.0)}")
+print(f"Casos con Cook's D > 4/n ({4/len(model_data):.4f}): {np.sum(cooks_d > (4/len(model_data)))}")
+
+# B) Linealidad del Logit (Prueba de Box-Tidwell para predictores continuos)
+# Se añaden los términos de interacción X * ln(X) para Participación y Satisfacción.
+# Si los p-valores de las interacciones son > 0.05, se cumple el supuesto de linealidad del logit.
+X_bt = X.copy()
+X_bt['Part_x_lnPart'] = X_bt['Mean_Participacion'] * np.log(X_bt['Mean_Participacion'])
+X_bt['Sat_x_lnSat'] = X_bt['Mean_Satisfaccion'] * np.log(X_bt['Mean_Satisfaccion'])
+
+modelo_bt = sm.Logit(y, X_bt).fit(disp=0)
+print("\n--- B) Linealidad del Logit (Test de Box-Tidwell) ---")
+print(f"P-valor interacción Participación * ln(Participación): {modelo_bt.pvalues['Part_x_lnPart']:.4f}")
+print(f"P-valor interacción Satisfacción * ln(Satisfacción): {modelo_bt.pvalues['Sat_x_lnSat']:.4f}")
+
+# C) Calibración y ajuste predictivo (Test de Hosmer-Lemeshow y Brier Score)
+prob_pred = modelo_final.predict(X)
+brier_score = np.mean((prob_pred - y) ** 2)
+
+# Cálculo de Hosmer-Lemeshow agrupando en deciles (g = 10)
+hl_df = pd.DataFrame({'y': y, 'prob': prob_pred})
+hl_df['decil'] = pd.qcut(hl_df['prob'], q=10, duplicates='drop')
+obs = hl_df.groupby('decil', observed=False)['y'].sum()
+esp = hl_df.groupby('decil', observed=False)['prob'].sum()
+n_grp = hl_df.groupby('decil', observed=False)['y'].count()
+p_bar = esp / n_grp
+
+hl_stat = np.sum(((obs - esp) ** 2) / (n_grp * p_bar * (1 - p_bar)))
+df_hl = len(obs) - 2
+p_val_hl = stats.chi2.sf(hl_stat, df_hl)
+
+print("\n--- C) Calibración del Modelo (Hosmer-Lemeshow y Brier Score) ---")
+print(f"Hosmer-Lemeshow Chi2({df_hl}): {hl_stat:.2f}, p-valor: {p_val_hl:.4f}")
+print(f"Brier Score: {brier_score:.4f}")
