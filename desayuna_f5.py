@@ -143,10 +143,10 @@ except Exception as e:
 
 
 # =========================================================
-# ### NUEVO BLOQUE: DIAGNÓSTICOS PARA EL REVISOR 2 ###
+# ### DIAGNÓSTICOS DEL MODELO (VIF, AIC Y LRT) ###
 # =========================================================
 
-print("\n### 3. DIAGNÓSTICOS PARA EL REVISOR 2 ###")
+print("\n### DIAGNÓSTICOS DEL MODELO (VIF, AIC Y LRT) ###")
 
 # A) Calcular VIF (Multicolinealidad)
 print("\n--- Factor de Inflación de la Varianza (VIF) ---")
