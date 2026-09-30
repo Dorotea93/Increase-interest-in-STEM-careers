@@ -108,7 +108,7 @@ model_data = model_data.dropna(subset=[
     'Tuvo_Mentora_Mujer'
 ])
 
-print(f"Muestra final procesada: {len(model_data)} estudiantes indecisos\n")
+#print(f"Muestra final procesada: {len(model_data)} estudiantes indecisos\n")
 
 # 8. Ajustar modelo logístico final
 X = model_data[
